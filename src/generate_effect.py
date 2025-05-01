@@ -4,11 +4,11 @@ from PIL import ImageFont, ImageDraw, Image
 import os
 import random
 
-# โฟลเดอร์เก็บผลลัพธ์
+# output folder
 output_dir = "data/augmented"
 os.makedirs(output_dir, exist_ok=True)
 
-# 🔤 ฟอนต์ลายมือที่คุณต้องเพิ่มเข้าไปเองในโฟลเดอร์ fonts/
+# 🔤 Handwritten fonts/
 fonts = [
     "fonts/THSarabunNew.ttf",
     "fonts/Handwritten1.ttf",
@@ -21,7 +21,7 @@ def generate_complex_ambiguous_digit(font_path):
     width, height = 64, 128
     canvas = np.ones((height, width, 3), dtype=np.uint8) * 255  # พื้นหลังขาว
 
-    # สุ่มเลข 1–3 ตัว มาซ้อนกัน
+    # random 1-3 number to overlap
     num_digits = random.randint(1, 3)
     chosen_digits = random.choices(digits, k=num_digits)
 
@@ -37,7 +37,7 @@ def generate_complex_ambiguous_digit(font_path):
         draw.text((x, y), digit, font=font, fill=color)
         canvas = np.array(img_pil)
 
-        # หมุนเล็กน้อยเพื่อเพิ่มความเบี้ยว
+        # rotate and twist
         M = cv2.getRotationMatrix2D((width/2, height/2), random.uniform(-10, 10), 1)
         canvas = cv2.warpAffine(canvas, M, (width, height), borderValue=(255, 255, 255))
 
@@ -46,7 +46,7 @@ def generate_complex_ambiguous_digit(font_path):
         ksize = random.choice([3, 5])
         canvas = cv2.GaussianBlur(canvas, (ksize, ksize), 0)
 
-    # ใส่ Noise
+    # Add Noise
     if random.random() < 0.5:
         noise = np.random.normal(0, 20, canvas.shape).astype(np.uint8)
         canvas = cv2.add(canvas, noise)
@@ -61,7 +61,7 @@ def generate_complex_ambiguous_digit(font_path):
 
     return canvas
 
-# 🔁 สร้าง 100 ภาพ
+# 🔁 create 100 images
 for i in range(100):
     font_path = random.choice(fonts)
     img = generate_complex_ambiguous_digit(font_path)

@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environment
+.venv-ambiguous-ai/
+
+# Output / Generated data
+output/
+data/
+*.log

@@ -6,6 +6,12 @@ __pycache__/
 .venv-ambiguous-ai/
 
 # Output / Generated data
-output/
+outputs/
+fonts/
 data/
 *.log
+
+#not related code
+list_fonts.py/
+print_tree_deep.py/
+print_tree_shallow.py/

@@ -4,65 +4,59 @@ from PIL import ImageFont, ImageDraw, Image
 import os
 import random
 
-# output folder
 output_dir = "data/augmented"
 os.makedirs(output_dir, exist_ok=True)
 
-# 🔤 Handwritten fonts/
-fonts = [
-    "fonts/THSarabunNew.ttf",
-    "fonts/Handwritten1.ttf",
-    "fonts/Handwritten2.ttf"
-]
+fonts = sorted([
+    "fonts/Kart-Thai raimue DEMO.ttf",
+    "fonts/Kart-Thai raimue2 DEMO.ttf",
+    "fonts/nura-kaopan-thin.ttf",
+    "fonts/nura-niwow-thin.ttf",
+    "fonts/SOV_PyaNakh.ttf"
+])
 
 digits = "0123456789"
 
-def generate_complex_ambiguous_digit(font_path):
-    width, height = 64, 128
-    canvas = np.ones((height, width, 3), dtype=np.uint8) * 255  # พื้นหลังขาว
+def generate_gan_ready_digit(font_path):
+    width, height = 64, 64
+    canvas = np.ones((height, width, 3), dtype=np.uint8) * 255
+    chosen_digits = random.choices(digits, k=3)
+    base_y_positions = [0, 20, 40]
 
-    # random 1-3 number to overlap
-    num_digits = random.randint(1, 3)
-    chosen_digits = random.choices(digits, k=num_digits)
-
-    for digit in chosen_digits:
+    for i, digit in enumerate(chosen_digits):
         img_pil = Image.fromarray(canvas)
         draw = ImageDraw.Draw(img_pil)
-        font = ImageFont.truetype(font_path, size=random.randint(80, 110))
 
-        x = random.randint(0, 10)
-        y = random.randint(0, 20)
-        color = (random.randint(150, 255), 0, 0)  # สีแดง
+        try:
+            font_size = random.randint(30, 45)
+            font = ImageFont.truetype(font_path, size=font_size)
+        except OSError as e:
+            print(f"[Warning] Could not load font: {font_path} → {e}")
+            continue
 
+        x = random.randint(5, 15)
+        y = base_y_positions[i] + random.randint(-2, 2)
+        if y + font_size > height:
+            y = height - font_size - 1
+
+        color = (random.randint(150, 255), 0, 0)
         draw.text((x, y), digit, font=font, fill=color)
         canvas = np.array(img_pil)
 
-        # rotate and twist
-        M = cv2.getRotationMatrix2D((width/2, height/2), random.uniform(-10, 10), 1)
+        M = cv2.getRotationMatrix2D((width / 2, height / 2), random.uniform(-10, 10), 1)
         canvas = cv2.warpAffine(canvas, M, (width, height), borderValue=(255, 255, 255))
 
-    # Gaussian Blur
     if random.random() < 0.8:
         ksize = random.choice([3, 5])
         canvas = cv2.GaussianBlur(canvas, (ksize, ksize), 0)
 
-    # Add Noise
-    if random.random() < 0.5:
-        noise = np.random.normal(0, 20, canvas.shape).astype(np.uint8)
-        canvas = cv2.add(canvas, noise)
-
-    # Motion Blur
-    if random.random() < 0.3:
-        k = 5
-        kernel_motion_blur = np.zeros((k, k))
-        kernel_motion_blur[int((k - 1)/2), :] = np.ones(k)
-        kernel_motion_blur = kernel_motion_blur / k
-        canvas = cv2.filter2D(canvas, -1, kernel_motion_blur)
-
     return canvas
 
-# 🔁 create 100 images
-for i in range(100):
+# Generate as many images as you want
+num_images = 50000
+for i in range(num_images):
     font_path = random.choice(fonts)
-    img = generate_complex_ambiguous_digit(font_path)
-    cv2.imwrite(os.path.join(output_dir, f"ambiguous_{i}.png"), img)
+    img = generate_gan_ready_digit(font_path)
+    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    filename = f"ambiguous_{i:05}.png"
+    cv2.imwrite(os.path.join(output_dir, filename), img_gray)
